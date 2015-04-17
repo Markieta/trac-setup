@@ -1,0 +1,35 @@
+#!/usr/bin/env bash
+
+# Instantiate Trac instance
+
+set -e
+
+MY_DIR=$(dirname $0)
+
+# Check for root access
+if [ $(id -u) -ne 0 ]; then
+    echo "Root privileges are required for running $0."
+    exit 1
+fi
+
+installed=$(rpm -qa)
+dependencies=''
+
+echo "$installed" | grep -qw trac     || dependencies="$dependencies trac"
+echo "$installed" | grep -qw httpd    || dependencies="$dependencies httpd"
+echo "$installed" | grep -qw mod_wsgi || dependencies="$dependencies mod_wsgi"
+
+if [ -n "$dependencies" ]; then
+    yum install -y $dependencies
+fi
+
+yes | cp -rf "$MY_DIR"/trac/ "$MY_DIR"/cgi-bin/ "$MY_DIR"/htdocs/ /var/www/
+yes | cp -rf "$MY_DIR"/etc/ /
+
+restorecon -r                     /var/www/
+chown -R    apache:apache         /var/www/trac/db/
+chcon -R -t httpd_sys_script_rw_t /var/www/trac/db/
+firewall-cmd --zone=public --add-service=http --permanent
+
+systemctl start  httpd.service
+systemctl enable httpd.service
