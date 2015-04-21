@@ -28,7 +28,7 @@ yes | cp -rf "$MY_DIR"/etc/ /
 
 restorecon -r                     /var/www/
 chown -R    apache:apache         /var/www/trac/db/
-chcon -R -t httpd_sys_script_rw_t /var/www/trac/db/
+chcon -R -t httpd_sys_script_rw_t /var/www/trac/
 firewall-cmd --zone=public --add-service=http --permanent
 
 systemctl start  httpd.service
